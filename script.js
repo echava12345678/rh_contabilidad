@@ -239,6 +239,7 @@ function filtrarTramites(searchTerm) {
     
 }
 
+
 function filtrarRegistros(searchTerm) {
     const term = searchTerm.toLowerCase();
     const resultados = registrosContables.filter(r => 
@@ -265,6 +266,13 @@ function filtrarPlacasContabilidad(searchTerm) {
         (p.placa && p.placa.toLowerCase().includes(term)) ||
         (p.asignadaA && p.asignadaA.toLowerCase().includes(term))
     );
+    // NUEVO: Llama a la nueva función para actualizar el formulario con el primer resultado.
+    if (resultados.length > 0) {
+        // Asegúrate de tener una función que actualice el formulario de contabilidad.
+        actualizarFormularioContabilidad(resultados[0]);
+    } else {
+        actualizarFormularioContabilidad(null); // Borra el formulario si no hay resultados.
+    }
      // NUEVO: Mostrar el término de búsqueda
     const displayElement = document.getElementById('contaPlacaQueryDisplay');
     if (searchTerm.trim() !== '') {
@@ -309,6 +317,7 @@ function filtrarPlacas(searchTerm) {
     } else {
         displayElement.style.display = 'none';
     }
+     
     renderPlacas(resultados);
 }
 function renderTramites(tramitesToRender) {
@@ -411,29 +420,34 @@ function renderPlacas(placasToRender) {
             <thead>
                 <tr>
                     <th>Placa</th>
-                    <th>Cliente</th>
-                    <th>Trámite</th>
-                    <th>Estado</th>
-                    <th>Fecha Recepción</th>
+                    <th>Asignada a</th>
+                    <th>F. Recepción</th>
+                    <th>F. Asignada</th>
+                    <th>F. Matrícula</th>
                     <th>Observaciones</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                ${placasToRender.map(p => `
-                    <tr>
-                        <td>${p.placa}</td>
-                        <td>${p.cliente}</td>
-                        <td>${p.tramite}</td>
-                        <td>${p.estado}</td>
-                        <td>${p.fechaRecepcion}</td>
-                        <td>${p.observaciones}</td>
-                        <td>
-                            <button class="btn-edit" onclick="editarPlaca('${p.id}')">Editar</button>
-                            <button class="btn-delete" onclick="eliminarPlaca('${p.id}')">Eliminar</button>
-                        </td>
-                    </tr>
-                `).join('')}
+                 ${placasToRender.map(p => {
+                    const estado = obtenerEstadoPlaca(p.fechaAsignada, p.fechaMatricula, p.asignadaA);
+                    return `
+                        <tr>
+                            <td>${p.placa || 'N/A'}</td>
+                            <td>${p.asignadaA || 'N/A'}</td>
+                            <td>${p.fechaRecepcion || 'N/A'}</td>
+                            <td>${p.fechaAsignada || 'N/A'}</td>
+                            <td>${p.fechaMatricula || 'N/A'}</td>
+                            <td>${p.observaciones || 'N/A'}</td>
+                            <td><span class="badge badge-${estado.toLowerCase().replace(' ', '-')}">${estado}</span></td>
+                            <td>
+                                <button class="btn-edit" onclick="editarPlaca('${p.id}')">Editar</button>
+                                <button class="btn-delete" onclick="eliminarPlaca('${p.id}')">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
             </tbody>
         </table>
     `;
@@ -1919,3 +1933,9 @@ window.actualizarValorConBoton = actualizarValorConBoton;
 window.descargarReciboEgreso = descargarReciboEgreso; // NUEVO: Exponer la nueva función
 window.actualizarTablaPlacasContabilidad = actualizarTablaPlacasContabilidad;
 window.filtrarPlacasContabilidad = filtrarPlacasContabilidad;
+
+window.filtrarPlacas = filtrarPlacas;
+window.filtrarPlacasContabilidad = filtrarPlacasContabilidad;
+window.filtrarTramites = filtrarTramites;
+window.filtrarClientes = filtrarClientes;
+window.filtrarRegistros = filtrarRegistros;
