@@ -855,6 +855,7 @@ function actualizarRegistrosContables() {
     if (filtroTipo !== 'todos') {
         registrosFiltrados = registrosContables.filter(reg => reg.tipo === filtroTipo);
     }
+    registrosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     
     if (registrosFiltrados.length === 0) {
         container.innerHTML = '<p>No hay registros contables para el filtro seleccionado.</p>';
@@ -1037,6 +1038,10 @@ async function editarMovimiento(id) {
                 <div class="form-group">
                     <label>Cliente</label>
                     <input type="text" id="editContaCliente" value="${movimiento.cliente}" required>
+                </div>
+                <div class="form-group">
+                    <label>Concepto</label>
+                    <input type="text" id="editContaConcepto" value="${movimiento.concepto}" required>
                 </div>
                 <div class="form-group">
                     <label>Banco</label>
@@ -1403,16 +1408,32 @@ async function registrarPlaca(e, db) {
     const observaciones = document.getElementById('placaObservaciones').value;
 
     function parsePlaca(placa) {
-        const match = placa.match(/^([A-Z]+)(\d+)([A-Z]?)$/);
+        // Expresión regular para múltiples formatos:
+        // 1. Carros y motos (JHP678 o JHP87G): letras1, numero, letras2 (opcional)
+        // 2. Motocarros (123ABC): numero, letras2
+        const match = placa.match(/^([A-Z]+)(\d+)([A-Z]?)$/) || placa.match(/^(\d+)([A-Z]+)$/);
+        
         if (!match) {
-            mostrarNotificacion('Formato de placa inválido. Ej: JHP34G', 'error');
+            mostrarNotificacion('Formato de placa inválido. Ejemplos válidos: JHP678, JHP87G, 123ABC', 'error');
             throw new Error('Formato de placa inválido');
         }
-        return {
-            letras1: match[1],
-            numero: parseInt(match[2], 10),
-            letras2: match[3] || ''
-        };
+
+        // Determinar el tipo de placa para devolver los datos correctamente
+        if (placa.match(/^([A-Z]+)(\d+)([A-Z]?)$/)) {
+            // Formato de carro o moto
+            return {
+                letras1: match[1],
+                numero: parseInt(match[2], 10),
+                letras2: match[3] || ''
+            };
+        } else {
+            // Formato de motocarro
+            return {
+                letras1: '', // Sin letras al inicio
+                numero: parseInt(match[1], 10),
+                letras2: match[2]
+            };
+        }
     }
 
     try {
